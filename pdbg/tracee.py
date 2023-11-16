@@ -143,19 +143,7 @@ class LinuxTracee:
 
     def poke(self, addr: int, data: int):
         self.assert_attached()
-        ipdbg.poke(self.pid, addr)
-
-    # NOTE: The 'mind_rbound' parameter in the next two functions should only be used if the area
-    #       that is accessed is within 8 bytes of the right boundary of the memory map it is contained in
-
-    def _read_bytes(self, addr: int, length: int, mind_rbound=False):
-        self.assert_attached()
-        data: bytearray = ipdbg.read_bytes(self.pid, addr, length, mind_rbound)
-        return data
-
-    def _write_bytes(self, addr: int, data: bytearray, mind_rbound=False):
-        self.assert_attached()
-        ipdbg.write_bytes(self.pid, addr, data, len(data), mind_rbound)
+        ipdbg.poke(self.pid, addr, data)
 
     # TODO: Maybe it's not the wisest thing to open and parse the mappings file on every single memory operation
     def read_bytes(self, addr: int, length: int):
@@ -176,7 +164,7 @@ class LinuxTracee:
         else:
             mind_rbound = False
 
-        return self._read_bytes(addr, length, mind_rbound)
+        return ipdbg.read_bytes(self.pid, addr, length, mind_rbound)
 
     def write_bytes(self, addr: int, data: bytearray):
         self.assert_attached()
@@ -193,7 +181,7 @@ class LinuxTracee:
         else:
             mind_rbound = False
 
-        return self._write_bytes(addr, data, mind_rbound)
+        return ipdbg.write_bytes(self.pid, addr, data, len(data), mind_rbound)
 
     def wait(self):
         self.assert_attached()
