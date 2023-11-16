@@ -4,7 +4,7 @@ WIP process debugger for linux, written in Python and C.
 
 ## Usage
 ```sh
-./build.sh
+make
 python3 main.py
 dbg> help
 ```
