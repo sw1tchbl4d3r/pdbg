@@ -183,6 +183,10 @@ class LinuxTracee:
 
         return ipdbg.write_bytes(self.pid, addr, data, len(data), mind_rbound)
 
+    def unwind(self):
+        self.assert_attached()
+        return ipdbg.unwind(self.pid, 128)
+
     def wait(self):
         self.assert_attached()
 

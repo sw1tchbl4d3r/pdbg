@@ -18,6 +18,7 @@ static PyMethodDef ModuleMethods[] = {
 
     { "read_bytes",  method_read_bytes,  METH_VARARGS, "helper to read bytes"           },
     { "write_bytes", method_write_bytes, METH_VARARGS, "helper to write bytes"          },
+    { "unwind",      method_unwind,      METH_VARARGS, "unwind stack frames"            },
 
     { "waitpid",     method_waitpid,     METH_VARARGS, "wait for child"                 },
 

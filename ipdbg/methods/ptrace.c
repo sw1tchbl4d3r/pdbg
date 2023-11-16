@@ -5,6 +5,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <libunwind-ptrace.h>
 
 #define ENMUMERATE_REGISTERS(O)          \
     O(r15); O(r14); O(r13); O(r12);      \
@@ -197,4 +198,41 @@ PyObject* method_write_bytes(PyObject* self, PyObject* args) {
         return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
+}
+
+PyObject* method_unwind(PyObject* self, PyObject* args) {
+    pid_t pid;
+    uint64_t step_limit;
+
+    if(!PyArg_ParseTuple(args, "ik", &pid, &step_limit))
+        return NULL;
+
+    unw_cursor_t cursor;
+    unw_addr_space_t addr_space = unw_create_addr_space(&_UPT_accessors, 0);
+    unw_init_remote(&cursor, addr_space, _UPT_create(pid));
+
+    PyObject* list = PyList_New(0);
+
+    unw_word_t offset, rip;
+    do {
+        char sym[4096];
+        unw_get_reg(&cursor, UNW_REG_IP, &rip);
+
+        PyObject* frame = PyDict_New();
+
+        PyDict_SetItem(frame, PyUnicode_FromString("rip"), PyLong_FromUnsignedLong(rip));
+
+        if (unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
+            PyDict_SetItem(frame, PyUnicode_FromString("symbol"), PyUnicode_FromString(sym));
+            PyDict_SetItem(frame, PyUnicode_FromString("offset"), PyLong_FromUnsignedLong(offset));
+        } else {
+            PyDict_SetItem(frame, PyUnicode_FromString("symbol"), PyUnicode_FromString(""));
+            PyDict_SetItem(frame, PyUnicode_FromString("offset"), PyLong_FromUnsignedLong(0));
+        }
+
+        PyList_Append(list, frame);
+        step_limit--;
+    } while (unw_step(&cursor) > 0 && step_limit > 0);
+
+    return list;
 }

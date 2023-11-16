@@ -23,6 +23,15 @@ class AttachCommand(Command):
         self.global_state.tracee = tracee
         log_info("Attached successfully!")
 
+class BacktraceCommand(Command):
+    names = ["backtrace", "bt"]
+    requires_tracee = True
+    help_string = "Unwinds the stack trace of the tracee and prints it."
+
+    def invoke(self, argv0="backtrace"):
+        assert self.global_state.tracee
+        print(self.global_state.tracee.unwind())
+
 class DetachCommand(Command):
     names = ["detach"]
     requires_tracee = True
@@ -117,4 +126,4 @@ class SingleStepCommand(Command):
         assert self.global_state.tracee
         self.global_state.tracee.singlestep()
 
-commands = [AttachCommand(), DetachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]
+commands = [AttachCommand(), BacktraceCommand(), DetachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]
