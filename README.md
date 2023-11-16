@@ -22,13 +22,13 @@ class PrintCommand(Command):
     requires_tracee = False
     help_string = "Just prints."
 
-    def invoke(self, arg: bytes, argv0="print"):
-        log_info(arg.decode())
+    def invoke(self, *args: bytes, argv0="print"):
+        log_info(b" ".join(args).decode())
 ```
 
 This class already tells the debugger that this is a command with the name `print`, which does not require to be attached to a tracee.
 
-The function signature is taken from python, here a function which only takes a single bytes argument and prints it when invoked.
+The function signature is taken from python, here a function which takes a variable amount of bytes to print.
 
 The help string is printed when `help print` or `help` is invoked, and usage information is automatically generated.
 
