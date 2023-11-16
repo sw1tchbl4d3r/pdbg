@@ -42,8 +42,8 @@ class PrintCommand(Command):
     requires_tracee = False
     help_string = "Just prints."
 
-    def invoke(self, arg: bytes, argv0="print"):
-        log_info(arg.decode())
+    def invoke(self, *args: bytes, argv0="print"):
+        log_info(b" ".join(args).decode())
 
 class QuitCommand(Command):
     names = ["quit", "q"]

@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 
 from pdbg.tracee import LinuxTracee as Tracee
+from pdbg.commands.logging import log_error
 
 class PDBGCommandError(Exception): ...
 
@@ -44,7 +45,7 @@ class GlobalState:
 
     def get_command(self, name: str):
         for command in self.commands:
-            if name in command.names:
+            if name in command.names and command.init_success:
                 return command
         return None
 
@@ -55,25 +56,53 @@ class Command:
 
     global_state: GlobalState
 
+    def __init__(self):
+        self.init_success = False
+
+        try:
+            self.check_syntax()
+            self.init_success = True
+        except CommandImplementationError as e:
+            log_error(f"Could not load command '{type(self).__name__}': {e}")
+
+    def check_syntax(self):
+        dict_params = dict(inspect.signature(self.invoke).parameters)
+
+        if len(dict_params) == 0:
+            raise CommandImplementationError(f"Last argument of '{type(self).__name__}' is not 'argv0'.")
+
+        last_param = dict_params.popitem()[1]
+        if last_param.name != "argv0":
+            raise CommandImplementationError(f"Last argument of '{type(self).__name__}' is not 'argv0'.")
+
+        vararg_check = [param.kind == inspect.Parameter.VAR_POSITIONAL for param in dict_params.values()]
+        if any(vararg_check) and vararg_check[-1] == False:
+            raise CommandImplementationError(f"The command '{type(self).__name__}' takes a vararg '*args', but should be at the last position before 'argv0'")
+
+        annotations = [param.annotation for param in dict_params.values()]
+        supported_annotations = [inspect._empty, str, int, list, list[str], list[int], bytes]
+
+        for annotation in annotations:
+            if annotation not in supported_annotations:
+                raise CommandImplementationError(f"{annotation} is not a supported annotation, in '{self}'.")
+
     def invoke(self, argv0="cmd"):
-        raise CommandImplementationError(f"The command {argv0} / '{self}' does not implement invoke().")
+        raise CommandImplementationError(f"The command {argv0} / '{self.__name__}' does not implement invoke().")
 
     def usage(self, argv0):
-        params = inspect.signature(self.invoke).parameters
+        params = dict(inspect.signature(self.invoke).parameters)
         params_string = ""
 
-        if len(params) == 0 or params[list(params.keys())[-1]].name != "argv0":
-            raise CommandImplementationError(f"Last argument of '{self}'.invoke is not 'argv0'.")
+        params.popitem() # pop argv0
 
-        for key in params.keys():
-            param = params[key]
-            if param.name == "argv0":
-                continue
-
+        for param in params.values():
             if param.default != inspect._empty:
                 params_string += " ["
             else:
                 params_string += " <"
+
+            if param.kind == inspect.Parameter.VAR_POSITIONAL:
+                params_string += "*"
 
             params_string += f"{param.name}"
             if param.annotation != inspect._empty:
@@ -89,30 +118,30 @@ class Command:
         return f"Usage: {argv0}{params_string}"
 
     def check_signature(self, args: list[str]):
-        dict_params = inspect.signature(self.invoke).parameters
-        annotations = [dict_params[i].annotation for i in dict_params.keys()]
-        arguments_needed = [dict_params[i] for i in dict_params.keys() if dict_params[i].default == inspect._empty]
+        params = dict(inspect.signature(self.invoke).parameters)
 
-        if len(dict_params) == 0 or dict_params[list(dict_params.keys())[-1]].name != "argv0":
-            raise CommandImplementationError(f"Last argument of '{self}' is not 'argv0'.")
+        params.popitem() # pop argv0
 
-        annotations = annotations[:-1]
+        annotations = [param.annotation for param in params.values()]
+        params_needed = [param for param in params.values() if param.default == param.empty]
 
-        if len(args) < len(arguments_needed):
-            raise CommandArgumentError(f"Arguments given: {len(args)}, needed: {len(arguments_needed)}.")
+        if len(args) < len(params_needed):
+            raise CommandArgumentError(f"Arguments given: {len(args)}, needed: {len(params_needed)}.")
 
-        if len(annotations) == 1 and annotations[0] in [inspect._empty, str]:
-            return [" ".join(args)]
+        if len(params_needed) > 0:
+            has_vararg = params_needed[-1].kind == inspect.Parameter.VAR_POSITIONAL
+        else:
+            has_vararg = False
 
-        if len(args) > len(annotations):
-            raise CommandArgumentError(f"Arguments given: {len(args)}, maximum: {len(arguments_needed)}.")
+        if len(args) > len(params) and not has_vararg:
+            raise CommandArgumentError(f"Arguments given: {len(args)}, maximum: {len(params_needed)}.")
 
         args = [remove_quotes(i) for i in args]
 
         new_args = []
         for i in range(len(args)):
             given = args[i]
-            needed = annotations[i]
+            needed = annotations[min(i, len(annotations) - 1)]
 
             if needed in [inspect._empty, str]:
                 new_args.append(given)
@@ -136,6 +165,6 @@ class Command:
                 new_args.append(parse_bytes(given))
                 continue
 
-            raise CommandImplementationError(f"{needed} is not a supported annotation, in '{self}'.")
+            assert "unreachable"
 
         return new_args
