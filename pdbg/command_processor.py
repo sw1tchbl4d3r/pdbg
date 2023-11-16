@@ -1,5 +1,4 @@
 import shlex
-import readline
 
 from pdbg.commands.command import *
 from pdbg.commands.logging import log_error, log_info, PROMPT
@@ -10,7 +9,7 @@ class CommandProcessor:
         self.commands: list[Command] = builtin_commands
         self.global_state = GlobalState()
         self.global_state.tracee = None
-        
+
         self.global_state.commands = self.commands
 
         for command in self.commands:
@@ -28,7 +27,7 @@ class CommandProcessor:
                 continue
 
             command = self.global_state.get_command(cmd[0])
-            
+
             if command == None:
                 log_error("Command not found.")
                 continue
@@ -46,6 +45,6 @@ class CommandProcessor:
                     log_error(f"IMPL: {err.args[0]}")
                 else:
                     log_error(err.args[0])
-                
+
                 if isinstance(err, CommandArgumentError):
                     log_info(command.usage(cmd[0]))

@@ -69,7 +69,7 @@ class Command:
             param = params[key]
             if param.name == "argv0":
                 continue
-            
+
             if param.default != inspect._empty:
                 params_string += " ["
             else:
@@ -80,7 +80,7 @@ class Command:
                 params_string += f": {param.annotation.__name__}"
             if param.default != inspect._empty:
                 params_string += f"={param.default}"
-            
+
             if param.default != inspect._empty:
                 params_string += "]"
             else:
@@ -95,9 +95,9 @@ class Command:
 
         if len(dict_params) == 0 or dict_params[list(dict_params.keys())[-1]].name != "argv0":
             raise CommandImplementationError(f"Last argument of '{self}' is not 'argv0'.")
-        
+
         annotations = annotations[:-1]
-        
+
         if len(args) < len(arguments_needed):
             raise CommandArgumentError(f"Arguments given: {len(args)}, needed: {len(arguments_needed)}.")
 

@@ -32,7 +32,7 @@ class HelpCommand(Command):
             print(cmd.help_string)
             log_info(cmd.usage(command))
             return
-        
+
         for cmd in self.global_state.commands:
             print(f"{cmd.names[0]}:")
             print(f"\t{cmd.help_string}")
@@ -70,7 +70,7 @@ class RegCommand(Command):
             reg: int = getattr(registers, register)
             log_info(f"{register}: {reg} ({hex(reg)})")
             return
-        
+
         for register in registers.supported_regs:
             if register in ["gs_base", "fs_base", "orig_rax"]:
                 continue
@@ -90,11 +90,11 @@ class SetRegCommand(Command):
 
         if register not in registers.supported_regs:
             raise CommandError(f"Unsupported Register: '{register}'")
-        
+
         setattr(registers, register, value)
         if not self.global_state.tracee.setregs(registers):
             raise CommandError("Could not set register.")
-        
+
         log_info(f"{register}: {value} ({hex(value)})")
 
 class SingleStepCommand(Command):

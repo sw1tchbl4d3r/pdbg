@@ -96,7 +96,7 @@ class LinuxTracee:
         self.pid = pid
         self.attached = False
         self.seized = False
-    
+
     def attach(self, seize=False):
         if seize:
             if ipdbg.seize(self.pid) == -1:
@@ -108,7 +108,7 @@ class LinuxTracee:
                 return False
             self.attached = True
             self.wait_for((StatusType.STOPPED, signal.SIGSTOP))
-        
+
         return True
 
     def seize(self):
@@ -117,11 +117,11 @@ class LinuxTracee:
     def detach(self):
         self.attached = False
         self.seized = False
-        
+
         if ipdbg.detach(self.pid) == -1:
             return False
         return True
-    
+
     def cont(self):
         self.assert_attached()
 
@@ -173,7 +173,7 @@ class LinuxTracee:
         return True
 
     # NOTE: The 'mind_rbound' parameter in the next two functions should only be used if the area
-    #       that is accessed is withing 8 bytes of the right boundary of the memory map it is contained in
+    #       that is accessed is within 8 bytes of the right boundary of the memory map it is contained in
 
     def _read_bytes(self, addr: int, length: int, mind_rbound=False):
         self.assert_attached()
@@ -202,7 +202,7 @@ class LinuxTracee:
             mmap = self.get_map_containing(addr)
             if not mmap:
                 return False
-            
+
             mind_rbound = mmap.end - end < 8
         else:
             mind_rbound = False
@@ -219,7 +219,7 @@ class LinuxTracee:
             mmap = self.get_map_containing(addr)
             if not mmap:
                 return False
-        
+
             mind_rbound = mmap.end - end < 8
         else:
             mind_rbound = False
@@ -235,7 +235,7 @@ class LinuxTracee:
 
         return parse_status(istatus)
 
-    def wait_for(self, status: tuple[StatusType, int]):    
+    def wait_for(self, status: tuple[StatusType, int]):
         while True:
             if not (rstatus := self.wait()):
                 return False
@@ -265,7 +265,7 @@ class LinuxTracee:
                     line = fd.readline().strip("\n")
         except (PermissionError, FileNotFoundError):
             return None
-        
+
         return mappings
 
     def get_map_containing(self, addr: int, given_mappings: list[MemoryMapping] = []):
@@ -279,5 +279,5 @@ class LinuxTracee:
         for mmap in mappings:
             if mmap.start <= addr <= mmap.end:
                 return mmap
-        
+
         return None
