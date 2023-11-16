@@ -5,6 +5,15 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#define ENMUMERATE_REGISTERS(O)          \
+    O(r15); O(r14); O(r13); O(r12);      \
+    O(rbp); O(rbx); O(r11); O(r10);      \
+    O(r9);  O(r8);  O(rax); O(rcx);      \
+    O(rdx); O(rsi); O(rdi); O(rip);      \
+    O(cs);  O(rsp); O(ss);  O(ds);       \
+    O(es);  O(fs);  O(gs);  O(orig_rax); \
+    O(fs_base); O(gs_base); O(eflags);   \
+
 // https://docs.python.org/3/c-api/arg.html
 
 static PyObject* ptrace_command(PyObject* self, PyObject* args, enum __ptrace_request command) {
@@ -35,13 +44,7 @@ static PyObject* method_getregs(PyObject* self, PyObject* args) {
 
     PyObject* dict = PyDict_New();
 
-    GET_REGISTER(r15); GET_REGISTER(r14); GET_REGISTER(r13); GET_REGISTER(r12);
-    GET_REGISTER(rbp); GET_REGISTER(rbx); GET_REGISTER(r11); GET_REGISTER(r10);
-    GET_REGISTER(r9);  GET_REGISTER(r8);  GET_REGISTER(rax); GET_REGISTER(rcx);
-    GET_REGISTER(rdx); GET_REGISTER(rsi); GET_REGISTER(rdi); GET_REGISTER(rip);
-    GET_REGISTER(cs);  GET_REGISTER(rsp); GET_REGISTER(ss);  GET_REGISTER(ds);
-    GET_REGISTER(es);  GET_REGISTER(fs);  GET_REGISTER(gs);  GET_REGISTER(orig_rax);
-    GET_REGISTER(fs_base); GET_REGISTER(gs_base); GET_REGISTER(eflags);
+    ENMUMERATE_REGISTERS(GET_REGISTER);
 
     PyDict_SetItem(dict, PyUnicode_FromString("call_ret"), PyLong_FromLong(call_ret));
 
@@ -57,13 +60,7 @@ static PyObject* method_setregs(PyObject* self, PyObject* args) {
     if(!PyArg_ParseTuple(args, "iO!", &pid, &PyDict_Type, &dict))
         return NULL;
 
-    SET_REGISTER(r15); SET_REGISTER(r14); SET_REGISTER(r13); SET_REGISTER(r12);
-    SET_REGISTER(rbp); SET_REGISTER(rbx); SET_REGISTER(r11); SET_REGISTER(r10);
-    SET_REGISTER(r9);  SET_REGISTER(r8);  SET_REGISTER(rax); SET_REGISTER(rcx);
-    SET_REGISTER(rdx); SET_REGISTER(rsi); SET_REGISTER(rdi); SET_REGISTER(rip);
-    SET_REGISTER(cs);  SET_REGISTER(rsp); SET_REGISTER(ss);  SET_REGISTER(ds);
-    SET_REGISTER(es);  SET_REGISTER(fs);  SET_REGISTER(gs);  SET_REGISTER(orig_rax);
-    SET_REGISTER(fs_base); SET_REGISTER(gs_base); SET_REGISTER(eflags);
+    ENMUMERATE_REGISTERS(SET_REGISTER);
 
     return PyLong_FromLong(ptrace(PTRACE_SETREGS, pid, NULL, &regs));
 }
