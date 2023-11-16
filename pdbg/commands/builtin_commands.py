@@ -34,7 +34,8 @@ class BacktraceCommand(Command):
 
         stacktrace = self.global_state.tracee.unwind()
         for frame in stacktrace:
-            print(f"{hex(frame.rip)}: {frame.symbol}+{hex(frame.offset)}")
+            symbol = "??" if not frame.symbol else frame.symbol
+            print(f"{hex(frame.rip)}: {symbol}+{hex(frame.offset)}")
 
 class DetachCommand(Command):
     names = ["detach"]
