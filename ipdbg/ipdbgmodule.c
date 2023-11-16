@@ -24,7 +24,7 @@ static PyMethodDef ModuleMethods[] = {
     { NULL,          NULL,               0,            NULL                             },
 };
 
-static struct PyModuleDef module = {
+static struct PyModuleDef module_def = {
     PyModuleDef_HEAD_INIT,
     "ipdbg",
     "pdbg internal c functions",
@@ -33,5 +33,6 @@ static struct PyModuleDef module = {
 };
 
 PyMODINIT_FUNC PyInit_ipdbg(void) {
-    return PyModule_Create(&module);
+    PyObject* module = PyModule_Create(&module_def);
+    return module;
 }

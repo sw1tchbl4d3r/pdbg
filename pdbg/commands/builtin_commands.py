@@ -11,11 +11,15 @@ class AttachCommand(Command):
         tracee = Tracee(pid)
 
         if argv0 == "attach":
-            if not tracee.attach():
-                raise CommandError(f"Could not attach to PID {pid}.")
+            try:
+                tracee.attach()
+            except OSError as e:
+                raise CommandError(f"Could not attach to PID {pid}: {e}")
         elif argv0 == "seize":
-            if not tracee.seize():
-                raise CommandError(f"Could not seize PID {pid}.")
+            try:
+                tracee.seize()
+            except OSError as e:
+                raise CommandError(f"Could not seize PID {pid}: {e}")
         self.global_state.tracee = tracee
         log_info("Attached successfully!")
 
@@ -85,15 +89,12 @@ class SetRegCommand(Command):
     def invoke(self, register: str, value: int, argv0="setreg"):
         assert self.global_state.tracee
 
-        if not (registers := self.global_state.tracee.getregs()):
-            raise CommandError("Could not get registers.")
-
+        registers = self.global_state.tracee.getregs()
         if register not in registers.supported_regs:
             raise CommandError(f"Unsupported Register: '{register}'")
 
         setattr(registers, register, value)
-        if not self.global_state.tracee.setregs(registers):
-            raise CommandError("Could not set register.")
+        self.global_state.tracee.setregs(registers)
 
         log_info(f"{register}: {value} ({hex(value)})")
 
@@ -104,8 +105,6 @@ class SingleStepCommand(Command):
 
     def invoke(self, argv0="step"):
         assert self.global_state.tracee
-
-        if not self.global_state.tracee.singlestep():
-            raise CommandError(f"Could not singlestep.")
+        self.global_state.tracee.singlestep()
 
 commands = [AttachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]

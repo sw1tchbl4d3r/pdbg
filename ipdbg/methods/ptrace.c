@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/ptrace.h>
 #include <sys/user.h>
+#include <errno.h>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -22,7 +23,10 @@ PyObject* ptrace_command(PyObject* self, PyObject* args, enum __ptrace_request c
     if(!PyArg_ParseTuple(args, "i", &pid))
         return NULL;
 
-    return PyLong_FromLong(ptrace(command, pid, NULL, NULL));
+    if (ptrace(command, pid, NULL, NULL) < 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_RETURN_NONE;
 }
 
 PyObject* method_attach(PyObject* self, PyObject* args) { return ptrace_command(self, args, PTRACE_ATTACH); }
@@ -40,13 +44,11 @@ PyObject* method_getregs(PyObject* self, PyObject* args) {
     if(!PyArg_ParseTuple(args, "i", &pid))
         return NULL;
 
-    long err = ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+    if (ptrace(PTRACE_GETREGS, pid, NULL, &regs) < 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     PyObject* dict = PyDict_New();
-
     ENMUMERATE_REGISTERS(GET_REGISTER);
-
-    PyDict_SetItem(dict, PyUnicode_FromString("err"), PyLong_FromLong(err));
 
     return dict;
 }
@@ -62,7 +64,10 @@ PyObject* method_setregs(PyObject* self, PyObject* args) {
 
     ENMUMERATE_REGISTERS(SET_REGISTER);
 
-    return PyLong_FromLong(ptrace(PTRACE_SETREGS, pid, NULL, &regs));
+    if (ptrace(PTRACE_SETREGS, pid, NULL, &regs) < 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_RETURN_NONE;
 }
 
 PyObject* method_peek(PyObject* self, PyObject* args) {
@@ -72,8 +77,14 @@ PyObject* method_peek(PyObject* self, PyObject* args) {
     if(!PyArg_ParseTuple(args, "ik", &pid, &addr))
         return NULL;
 
-    // NOTE: As we extract a full long of data, the signing bit has to be interpreted as a data bit.
-    return PyLong_FromUnsignedLong(ptrace(PTRACE_PEEKTEXT, pid, addr, NULL));
+    // NOTE: set errno to 0 to check it later, as PEEKTEXT cannot return error values.
+    errno = 0;
+    uint64_t result = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
+
+    if (errno != 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    return PyLong_FromUnsignedLong(result);
 }
 
 PyObject* method_poke(PyObject* self, PyObject* args) {
@@ -84,7 +95,10 @@ PyObject* method_poke(PyObject* self, PyObject* args) {
     if(!PyArg_ParseTuple(args, "ikk", &pid, &addr, &data))
         return NULL;
 
-    return PyLong_FromLong(ptrace(PTRACE_POKETEXT, pid, addr, data));
+    if (ptrace(PTRACE_POKETEXT, pid, addr, data) < 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    Py_RETURN_NONE;
 }
 
 // NOTE: These methods have to be a bit finnicky because PTRACE_POKE and PTRACE_PEEK 
@@ -102,10 +116,17 @@ PyObject* method_read_bytes(PyObject* self, PyObject* args) {
     uint64_t data;
 
     char* final = malloc(length+1);
-    char* final_ptr = final;
+    if (!final)
+        return PyErr_NoMemory();
 
+    char* final_ptr = final;
     for (size_t i = 0; i < length / sizeof(uint64_t); i++) {
+        errno = 0;
         data = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
+
+        if (errno != 0)
+            return PyErr_SetFromErrno(PyExc_OSError);
+
         memcpy(final_ptr, (char*)(&data), sizeof(uint64_t));
         addr += sizeof(uint64_t);
         final_ptr += sizeof(uint64_t);
@@ -115,7 +136,11 @@ PyObject* method_read_bytes(PyObject* self, PyObject* args) {
     if (mind_rbound)
         addr = addr - (sizeof(uint64_t) - partial_len);
 
+    errno = 0;
     data = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
+
+    if (errno != 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     char* ptr;
     if (mind_rbound)
@@ -144,7 +169,9 @@ PyObject* method_write_bytes(PyObject* self, PyObject* args) {
     char* c_data = PyByteArray_AsString(data);
 
     for (size_t i = 0; i < length / sizeof(uint64_t); i++) {
-        ptrace(PTRACE_POKETEXT, pid, addr, *((uint64_t*)c_data));
+        if (ptrace(PTRACE_POKETEXT, pid, addr, *((uint64_t*)c_data)) < 0)
+            return PyErr_SetFromErrno(PyExc_OSError);
+
         c_data += sizeof(uint64_t);
         addr += sizeof(uint64_t);
     }
@@ -153,7 +180,11 @@ PyObject* method_write_bytes(PyObject* self, PyObject* args) {
     if (mind_rbound)
         addr = addr - (sizeof(uint64_t) - partial_len);
 
+    errno = 0;
     uint64_t read_data = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
+
+    if (errno != 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     char* ptr;
     if (mind_rbound)
@@ -162,7 +193,8 @@ PyObject* method_write_bytes(PyObject* self, PyObject* args) {
         ptr = (char*)(&read_data);
 
     memcpy(ptr, c_data, partial_len);
-    ptrace(PTRACE_POKETEXT, pid, addr, *((uint64_t*)ptr));
+    if (ptrace(PTRACE_POKETEXT, pid, addr, *((uint64_t*)ptr)) < 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
 }

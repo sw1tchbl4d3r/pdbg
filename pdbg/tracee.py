@@ -99,94 +99,63 @@ class LinuxTracee:
 
     def attach(self, seize=False):
         if seize:
-            if ipdbg.seize(self.pid) == -1:
-                return False
+            ipdbg.seize(self.pid)
             self.attached = True
             self.seized = True
         else:
-            if ipdbg.attach(self.pid) == -1:
-                return False
+            ipdbg.attach(self.pid)
             self.attached = True
             self.wait_for((StatusType.STOPPED, signal.SIGSTOP))
 
-        return True
-
     def seize(self):
-        return self.attach(seize=True)
+        self.attach(seize=True)
 
     def detach(self):
         self.attached = False
         self.seized = False
-
-        if ipdbg.detach(self.pid) == -1:
-            return False
-        return True
+        ipdbg.detach(self.pid)
 
     def cont(self):
         self.assert_attached()
-
-        if ipdbg.cont(self.pid) == -1:
-            return False
-        return True
+        ipdbg.cont(self.pid)
 
     def interrupt(self):
         self.assert_attached(seize=True)
-
-        if ipdbg.interrupt(self.pid) == -1:
-            return False
+        ipdbg.interrupt(self.pid)
         return self.wait_for_trap()
 
     def singlestep(self):
         self.assert_attached()
-
-        if ipdbg.singlestep(self.pid) == -1:
-            return False
+        ipdbg.singlestep(self.pid)
         return self.wait_for_trap()
 
     def setregs(self, regs: Registers):
         self.assert_attached()
-
-        if ipdbg.setregs(self.pid, regs.to_dict()) == -1:
-            return False
-        return True
+        ipdbg.setregs(self.pid, regs.to_dict())
 
     def getregs(self):
         self.assert_attached()
-
-        regs = ipdbg.getregs(self.pid)
-        if regs["err"] == -1:
-            return False
-
-        return Registers(regs)
+        return Registers(ipdbg.getregs(self.pid))
 
     def peek(self, addr: int):
         self.assert_attached()
-
-        # NOTE: We cannot know if peek succeeded.
         return ipdbg.peek(self.pid, addr)
 
     def poke(self, addr: int, data: int):
         self.assert_attached()
-
-        if ipdbg.poke(self.pid, addr) == -1:
-            return False
-        return True
+        ipdbg.poke(self.pid, addr)
 
     # NOTE: The 'mind_rbound' parameter in the next two functions should only be used if the area
     #       that is accessed is within 8 bytes of the right boundary of the memory map it is contained in
 
     def _read_bytes(self, addr: int, length: int, mind_rbound=False):
         self.assert_attached()
-
         data: bytearray = ipdbg.read_bytes(self.pid, addr, length, mind_rbound)
         return data
 
     def _write_bytes(self, addr: int, data: bytearray, mind_rbound=False):
         self.assert_attached()
-
-        if ipdbg.write_bytes(self.pid, addr, data, len(data), mind_rbound) == -1:
-            return False
-        return True
+        ipdbg.write_bytes(self.pid, addr, data, len(data), mind_rbound)
 
     # TODO: Maybe it's not the wisest thing to open and parse the mappings file on every single memory operation
     def read_bytes(self, addr: int, length: int):
