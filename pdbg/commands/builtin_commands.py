@@ -23,6 +23,16 @@ class AttachCommand(Command):
         self.global_state.tracee = tracee
         log_info("Attached successfully!")
 
+class DetachCommand(Command):
+    names = ["detach"]
+    requires_tracee = True
+    help_string = "Detaches the current tracee."
+
+    def invoke(self, argv0="detach"):
+        assert self.global_state.tracee
+        self.global_state.tracee.detach()
+        log_info("Detached successfully!")
+
 class HelpCommand(Command):
     names = ["help"]
     requires_tracee = False
@@ -107,4 +117,4 @@ class SingleStepCommand(Command):
         assert self.global_state.tracee
         self.global_state.tracee.singlestep()
 
-commands = [AttachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]
+commands = [AttachCommand(), DetachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]
