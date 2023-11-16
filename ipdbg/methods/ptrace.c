@@ -16,7 +16,7 @@
 
 // https://docs.python.org/3/c-api/arg.html
 
-static PyObject* ptrace_command(PyObject* self, PyObject* args, enum __ptrace_request command) {
+PyObject* ptrace_command(PyObject* self, PyObject* args, enum __ptrace_request command) {
     pid_t pid;
 
     if(!PyArg_ParseTuple(args, "i", &pid))
@@ -25,15 +25,15 @@ static PyObject* ptrace_command(PyObject* self, PyObject* args, enum __ptrace_re
     return PyLong_FromLong(ptrace(command, pid, NULL, NULL));
 }
 
-static PyObject* method_attach(PyObject* self, PyObject* args) { return ptrace_command(self, args, PTRACE_ATTACH); }
-static PyObject* method_seize(PyObject* self, PyObject* args) { return ptrace_command(self, args, PTRACE_SEIZE); }
-static PyObject* method_detach(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_DETACH); }
-static PyObject* method_cont(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_CONT); }
-static PyObject* method_interrupt(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_INTERRUPT); }
-static PyObject* method_singlestep(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_SINGLESTEP); }
+PyObject* method_attach(PyObject* self, PyObject* args) { return ptrace_command(self, args, PTRACE_ATTACH); }
+PyObject* method_seize(PyObject* self, PyObject* args) { return ptrace_command(self, args, PTRACE_SEIZE); }
+PyObject* method_detach(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_DETACH); }
+PyObject* method_cont(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_CONT); }
+PyObject* method_interrupt(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_INTERRUPT); }
+PyObject* method_singlestep(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_SINGLESTEP); }
 
 #define GET_REGISTER(reg) PyDict_SetItem(dict, PyUnicode_FromString(#reg), PyLong_FromUnsignedLong(regs.reg))
-static PyObject* method_getregs(PyObject* self, PyObject* args) {
+PyObject* method_getregs(PyObject* self, PyObject* args) {
     pid_t pid;
     struct user_regs_struct regs;
 
@@ -52,7 +52,7 @@ static PyObject* method_getregs(PyObject* self, PyObject* args) {
 }
 
 #define SET_REGISTER(reg) regs.reg = PyLong_AsUnsignedLong(PyDict_GetItem(dict, PyUnicode_FromString(#reg)))
-static PyObject* method_setregs(PyObject* self, PyObject* args) {
+PyObject* method_setregs(PyObject* self, PyObject* args) {
     pid_t pid;
     PyObject* dict;
     struct user_regs_struct regs;
@@ -65,7 +65,7 @@ static PyObject* method_setregs(PyObject* self, PyObject* args) {
     return PyLong_FromLong(ptrace(PTRACE_SETREGS, pid, NULL, &regs));
 }
 
-static PyObject* method_peek(PyObject* self, PyObject* args) {
+PyObject* method_peek(PyObject* self, PyObject* args) {
     pid_t pid;
     uint64_t addr;
 
@@ -76,7 +76,7 @@ static PyObject* method_peek(PyObject* self, PyObject* args) {
     return PyLong_FromUnsignedLong(ptrace(PTRACE_PEEKTEXT, pid, addr, NULL));
 }
 
-static PyObject* method_poke(PyObject* self, PyObject* args) {
+PyObject* method_poke(PyObject* self, PyObject* args) {
     pid_t pid;
     uint64_t addr;
     uint64_t data;
@@ -90,7 +90,7 @@ static PyObject* method_poke(PyObject* self, PyObject* args) {
 // NOTE: These methods have to be a bit finnicky because PTRACE_POKE and PTRACE_PEEK 
 //       only support reading/writing full uint64_t values.
 
-static PyObject* method_read_bytes(PyObject* self, PyObject* args) {
+PyObject* method_read_bytes(PyObject* self, PyObject* args) {
     pid_t pid;
     uint64_t addr;
     size_t length;
@@ -131,7 +131,7 @@ static PyObject* method_read_bytes(PyObject* self, PyObject* args) {
     return final_bytes;
 }
 
-static PyObject* method_write_bytes(PyObject* self, PyObject* args) {
+PyObject* method_write_bytes(PyObject* self, PyObject* args) {
     pid_t pid;
     uint64_t addr;
     size_t length;
