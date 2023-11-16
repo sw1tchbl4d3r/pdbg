@@ -79,6 +79,8 @@ class QuitCommand(Command):
     help_string = "Quits the debugger."
 
     def invoke(self, argv0="quit"):
+        if self.global_state.tracee:
+            self.global_state.tracee.detach()
         exit(0)
 
 class RegCommand(Command):
