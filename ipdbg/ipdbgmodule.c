@@ -27,8 +27,8 @@ static PyMethodDef ModuleMethods[] = {
 };
 
 void ipdbg_dealloc(void*) {
-    Py_DECREF(IPDBG_Registers);
-    Py_DECREF(IPDBG_UnwoundStackFrame);
+    Py_XDECREF(IPDBG_Registers);
+    Py_XDECREF(IPDBG_UnwoundStackFrame);
 }
 
 static struct PyModuleDef module_def = {

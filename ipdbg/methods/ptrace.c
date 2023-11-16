@@ -203,12 +203,14 @@ PyObject* method_write_bytes(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
-void decref_list(PyObject *list) {
+void decref_list(PyObject* list) {
+    if (!list)
+        return;
+
     Py_ssize_t size = PyList_Size(list);
-    for (Py_ssize_t i = 0; i < size; ++i) {
-        PyObject *item = PyList_GetItem(list, i);
-        Py_XDECREF(item);
-    }
+    for (Py_ssize_t i = 0; i < size; ++i)
+        Py_XDECREF(PyList_GetItem(list, i));
+
     Py_DECREF(list);
 }
 
