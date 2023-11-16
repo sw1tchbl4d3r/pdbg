@@ -37,7 +37,7 @@ The help string is printed when `help print` or `help` is invoked, and usage inf
 - [x] Debugger interface
 - [x] Process attaching 
 - [x] Register manipulation
-- [ ] Backtrace unwinding
+- [x] Backtrace unwinding
 - [ ] Memory manipulation
 - [ ] Floating point registers
 - [ ] `capstone` disassembler integration

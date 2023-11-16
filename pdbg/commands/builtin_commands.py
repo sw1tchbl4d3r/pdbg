@@ -31,7 +31,10 @@ class BacktraceCommand(Command):
 
     def invoke(self, argv0="backtrace"):
         assert self.global_state.tracee
-        print(self.global_state.tracee.unwind())
+
+        stacktrace = self.global_state.tracee.unwind()
+        for frame in stacktrace:
+            print(f"{hex(frame.rip)}: {frame.symbol}+{hex(frame.offset)}")
 
 class DetachCommand(Command):
     names = ["detach"]
