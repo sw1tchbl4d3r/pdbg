@@ -40,13 +40,13 @@ PyObject* method_getregs(PyObject* self, PyObject* args) {
     if(!PyArg_ParseTuple(args, "i", &pid))
         return NULL;
 
-    long call_ret = ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+    long err = ptrace(PTRACE_GETREGS, pid, NULL, &regs);
 
     PyObject* dict = PyDict_New();
 
     ENMUMERATE_REGISTERS(GET_REGISTER);
 
-    PyDict_SetItem(dict, PyUnicode_FromString("call_ret"), PyLong_FromLong(call_ret));
+    PyDict_SetItem(dict, PyUnicode_FromString("err"), PyLong_FromLong(err));
 
     return dict;
 }

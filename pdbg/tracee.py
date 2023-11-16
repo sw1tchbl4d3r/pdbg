@@ -154,7 +154,7 @@ class LinuxTracee:
         self.assert_attached()
 
         regs = ipdbg.getregs(self.pid)
-        if regs["call_ret"] == -1:
+        if regs["err"] == -1:
             return False
 
         return Registers(regs)
