@@ -1,3 +1,4 @@
+from pdbg.datatypes import Registers
 from pdbg.tracee import LinuxTracee as Tracee
 from pdbg.commands.command import Command, CommandError
 from pdbg.commands.logging import log_info
@@ -88,13 +89,15 @@ class RegCommand(Command):
             raise CommandError("Could not get registers.")
 
         if register:
-            if register not in registers.supported_regs:
+            if not hasattr(registers, register):
                 raise CommandError(f"Unsupported Register: '{register}'")
             reg: int = getattr(registers, register)
             log_info(f"{register}: {reg} ({hex(reg)})")
             return
 
-        for register in registers.supported_regs:
+        # TODO: dont rely on __annotations__
+        register_names = list(Registers.__annotations__.keys())
+        for register in register_names:
             if register in ["gs_base", "fs_base", "orig_rax"]:
                 continue
             reg: int = getattr(registers, register)
@@ -109,7 +112,7 @@ class SetRegCommand(Command):
         assert self.global_state.tracee
 
         registers = self.global_state.tracee.getregs()
-        if register not in registers.supported_regs:
+        if not hasattr(registers, register):
             raise CommandError(f"Unsupported Register: '{register}'")
 
         setattr(registers, register, value)

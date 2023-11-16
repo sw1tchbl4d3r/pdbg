@@ -2,7 +2,8 @@ import signal
 from mmap import PAGESIZE
 from enum import Enum, IntFlag, auto
 
-import ipdbg # type: ignore
+import ipdbg
+from pdbg.datatypes import Registers, UnwoundStackFrame
 
 class Permissions(IntFlag):
     N = 0
@@ -48,30 +49,6 @@ class MemoryMapping:
             perms |= Permissions.X
 
         return cls(start, end, perms, identifier)
-
-class Registers:
-    supported_regs = ["rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
-                      "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15",
-                      "rip", "eflags", "cs", "ss", "ds", "es", "fs", "gs",
-                      "gs_base", "fs_base", "orig_rax"]
-
-    # NOTE: for autocompletion
-    r15 = 0; r14 = 0; r13 = 0; r12 = 0; rbp = 0; rbx = 0; r11 = 0; r10 = 0
-    r9  = 0; r8  = 0; rax = 0; rcx = 0; rdx = 0; rsi = 0; rdi = 0; rip = 0
-    cs  = 0; rsp = 0; ss  = 0; ds  = 0; es  = 0; fs  = 0; gs  = 0; orig_rax = 0
-    fs_base = 0; gs_base = 0; eflags = 0
-
-    def __init__(self, reg_dict: dict[str, int]):
-        assert all([i in reg_dict.keys() for i in self.supported_regs]), "dict does not contain all registers."
-
-        for reg in self.supported_regs:
-            setattr(self, reg, reg_dict[reg])
-
-    def to_dict(self):
-        ret: dict[str, int] = {}
-        for reg in self.supported_regs:
-            ret[reg] = getattr(self, reg)
-        return ret
 
 def parse_status(status: int):
     if status == 0xffff:
@@ -131,11 +108,11 @@ class LinuxTracee:
 
     def setregs(self, regs: Registers):
         self.assert_attached()
-        ipdbg.setregs(self.pid, regs.to_dict())
+        ipdbg.setregs(self.pid, regs)
 
     def getregs(self):
         self.assert_attached()
-        return Registers(ipdbg.getregs(self.pid))
+        return ipdbg.getregs(self.pid)
 
     def peek(self, addr: int):
         self.assert_attached()

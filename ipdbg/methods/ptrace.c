@@ -7,7 +7,7 @@
 #include <Python.h>
 #include <libunwind-ptrace.h>
 
-#define ENMUMERATE_REGISTERS(O)          \
+#define ENUMERATE_REGISTERS(O)           \
     O(r15); O(r14); O(r13); O(r12);      \
     O(rbp); O(rbx); O(r11); O(r10);      \
     O(r9);  O(r8);  O(rax); O(rcx);      \
@@ -37,7 +37,7 @@ PyObject* method_cont(PyObject *self, PyObject *args) { return ptrace_command(se
 PyObject* method_interrupt(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_INTERRUPT); }
 PyObject* method_singlestep(PyObject *self, PyObject *args) { return ptrace_command(self, args, PTRACE_SINGLESTEP); }
 
-#define GET_REGISTER(reg) PyDict_SetItem(dict, PyUnicode_FromString(#reg), PyLong_FromUnsignedLong(regs.reg))
+#define GET_REGISTER(reg) PyObject_SetAttrString(registers_instance, #reg, PyLong_FromUnsignedLong(regs.reg))
 PyObject* method_getregs(PyObject* self, PyObject* args) {
     pid_t pid;
     struct user_regs_struct regs;
@@ -48,22 +48,25 @@ PyObject* method_getregs(PyObject* self, PyObject* args) {
     if (ptrace(PTRACE_GETREGS, pid, NULL, &regs) < 0)
         return PyErr_SetFromErrno(PyExc_OSError);
 
-    PyObject* dict = PyDict_New();
-    ENMUMERATE_REGISTERS(GET_REGISTER);
-
-    return dict;
-}
-
-#define SET_REGISTER(reg) regs.reg = PyLong_AsUnsignedLong(PyDict_GetItem(dict, PyUnicode_FromString(#reg)))
-PyObject* method_setregs(PyObject* self, PyObject* args) {
-    pid_t pid;
-    PyObject* dict;
-    struct user_regs_struct regs;
-
-    if(!PyArg_ParseTuple(args, "iO!", &pid, &PyDict_Type, &dict))
+    PyObject* registers_instance = PyObject_CallObject(IPDBG_Registers, NULL);
+    if (!registers_instance)
         return NULL;
 
-    ENMUMERATE_REGISTERS(SET_REGISTER);
+    ENUMERATE_REGISTERS(GET_REGISTER);
+
+    return registers_instance;
+}
+
+#define SET_REGISTER(reg) regs.reg = PyLong_AsLong(PyObject_GetAttrString(registers_instance, #reg))
+PyObject* method_setregs(PyObject* self, PyObject* args) {
+    pid_t pid;
+    PyObject* registers_instance;
+    struct user_regs_struct regs;
+
+    if(!PyArg_ParseTuple(args, "iO!", &pid, IPDBG_Registers, &registers_instance))
+        return NULL;
+
+    ENUMERATE_REGISTERS(SET_REGISTER);
 
     if (ptrace(PTRACE_SETREGS, pid, NULL, &regs) < 0)
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -200,6 +203,15 @@ PyObject* method_write_bytes(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+void decref_list(PyObject *list) {
+    Py_ssize_t size = PyList_Size(list);
+    for (Py_ssize_t i = 0; i < size; ++i) {
+        PyObject *item = PyList_GetItem(list, i);
+        Py_XDECREF(item);
+    }
+    Py_DECREF(list);
+}
+
 PyObject* method_unwind(PyObject* self, PyObject* args) {
     pid_t pid;
     uint64_t step_limit;
@@ -218,16 +230,20 @@ PyObject* method_unwind(PyObject* self, PyObject* args) {
         char sym[4096];
         unw_get_reg(&cursor, UNW_REG_IP, &rip);
 
-        PyObject* frame = PyDict_New();
+        PyObject* frame = PyObject_CallObject(IPDBG_UnwoundStackFrame, NULL);
+        if (!frame) {
+            decref_list(list);
+            return NULL;
+        }
 
-        PyDict_SetItem(frame, PyUnicode_FromString("rip"), PyLong_FromUnsignedLong(rip));
+        PyObject_SetAttrString(frame, "rip", PyLong_FromUnsignedLong(rip));
 
         if (unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
-            PyDict_SetItem(frame, PyUnicode_FromString("symbol"), PyUnicode_FromString(sym));
-            PyDict_SetItem(frame, PyUnicode_FromString("offset"), PyLong_FromUnsignedLong(offset));
+            PyObject_SetAttrString(frame, "symbol", PyUnicode_FromString(sym));
+            PyObject_SetAttrString(frame, "offset", PyLong_FromUnsignedLong(offset));
         } else {
-            PyDict_SetItem(frame, PyUnicode_FromString("symbol"), PyUnicode_FromString(""));
-            PyDict_SetItem(frame, PyUnicode_FromString("offset"), PyLong_FromUnsignedLong(0));
+            PyObject_SetAttrString(frame, "symbol", PyUnicode_FromString(""));
+            PyObject_SetAttrString(frame, "offset", PyLong_FromUnsignedLong(0));
         }
 
         PyList_Append(list, frame);

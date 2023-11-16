@@ -1,0 +1,33 @@
+class UnwoundStackFrame:
+    rip: int
+    symbol: str
+    offset: int
+
+class Registers:
+    rax: int
+    rbx: int
+    rcx: int
+    rdx: int
+    rsi: int
+    rdi: int
+    rbp: int
+    rsp: int
+    r8: int
+    r9: int
+    r10: int
+    r11: int
+    r12: int
+    r13: int
+    r14: int
+    r15: int
+    rip: int
+    cs: int
+    ss: int
+    ds: int
+    es: int
+    fs: int
+    gs: int
+    orig_rax: int
+    fs_base: int
+    gs_base: int
+    eflags: int

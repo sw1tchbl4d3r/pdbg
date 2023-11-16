@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#include "methods/globals.h"
 #include "methods/ptrace.c"
 #include "methods/util.c"
 
@@ -25,15 +26,49 @@ static PyMethodDef ModuleMethods[] = {
     { NULL,          NULL,               0,            NULL                             },
 };
 
+void ipdbg_dealloc(void*) {
+    Py_DECREF(IPDBG_Registers);
+    Py_DECREF(IPDBG_UnwoundStackFrame);
+}
+
 static struct PyModuleDef module_def = {
     PyModuleDef_HEAD_INIT,
     "ipdbg",
     "pdbg internal c functions",
     -1,
-    ModuleMethods
+    ModuleMethods,
+    NULL,
+    NULL,
+    NULL,
+    ipdbg_dealloc
 };
 
 PyMODINIT_FUNC PyInit_ipdbg(void) {
     PyObject* module = PyModule_Create(&module_def);
+
+    PyObject* datatypes_module_name = PyUnicode_FromString("pdbg.datatypes");
+    PyObject* datatypes_module = PyImport_Import(datatypes_module_name);
+    Py_DECREF(datatypes_module_name);
+
+    if (!datatypes_module)
+        return NULL;
+
+    PyObject* module_dict = PyModule_GetDict(datatypes_module);
+
+    IPDBG_Registers = PyDict_GetItemString(module_dict, "Registers");
+    if (!IPDBG_Registers) {
+        Py_DECREF(datatypes_module);
+        return PyErr_Format(PyExc_NameError, "Could not import pdbg.datatypes.Registers");
+    }
+
+    IPDBG_UnwoundStackFrame = PyDict_GetItemString(module_dict, "UnwoundStackFrame");
+    if (!IPDBG_UnwoundStackFrame) {
+        Py_DECREF(datatypes_module);
+        return PyErr_Format(PyExc_NameError, "Could not import pdbg.datatypes.UnwoundStackFrame");
+    }
+
+    Py_INCREF(IPDBG_Registers);
+    Py_INCREF(IPDBG_UnwoundStackFrame);
+
     return module;
 }
