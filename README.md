@@ -4,8 +4,9 @@ WIP process debugger for linux, written in Python and C.
 
 ## Usage
 ```sh
-make
-python3 main.py
+$ pip install -r requirements.txt
+$ make
+$ python3 main.py
 dbg> help
 ```
 
