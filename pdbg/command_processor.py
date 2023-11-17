@@ -2,6 +2,7 @@ import shlex
 import readline
 
 from pdbg.commands.command import *
+from pdbg.commands.callbacks import *
 from pdbg.commands.logging import log_error, log_info, PROMPT
 from pdbg.commands.builtin_commands import commands as builtin_commands
 
@@ -13,6 +14,9 @@ class CommandProcessor:
 
         for command in self.commands:
             command.global_state = self.global_state
+
+        self.global_state.add_callback("on_attach", on_attach)
+        self.global_state.add_callback("on_step", on_step)
 
         readline.set_auto_history(True)
 
