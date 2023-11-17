@@ -44,6 +44,10 @@ class BacktraceCommand(Command):
             offset = frame.offset
             symbol = "??" if not frame.symbol else frame.symbol
 
+            # NOTE: If some symbols are missing from the binary, libunwind may miscategorize
+            #       some symbols. Lets say `foo` goes from 0x0 - 0x10, and `bar` from 0x30 - 0x40,
+            #       and everything inbetween does not have a symbol. libunwind would now say that address 0x12
+            #       is foo+0x12, even though we just dont have a symbol for it. This approach here should fix that.
             if mmaps:
                 mmap = self.global_state.tracee.get_map_containing(frame.rip, mmaps)
                 if mmap:

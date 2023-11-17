@@ -93,6 +93,7 @@ class ELFAnalyzer:
 
     # TODO: this approach is a bit naive, since a function could in theory return early,
     #       or jump into another segment where the RET would take place.
+    #       (but i *think* this is what GDB does, so is there even a better way?)
     def find_function_end(self, offset: int) -> int:
         for segment in self.text_segments:
             if offset >= segment.offset and offset < segment.offset_end:
