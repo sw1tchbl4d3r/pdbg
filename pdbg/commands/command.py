@@ -40,8 +40,11 @@ def remove_quotes(given: str):
 
 class GlobalState:
     storage: dict = {}
-    commands: list[Command]
-    tracee: Tracee | None = None
+
+    commands: list[Command] = []
+
+    tracee: Tracee
+    tracee_attached = False
 
     def get_command(self, name: str):
         for command in self.commands:

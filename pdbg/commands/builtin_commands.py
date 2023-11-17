@@ -22,6 +22,8 @@ class AttachCommand(Command):
             except OSError as e:
                 raise CommandError(f"Could not seize PID {pid}: {e}")
         self.global_state.tracee = tracee
+        self.global_state.tracee_attached = True
+
         log_info("Attached successfully!")
 
 class BacktraceCommand(Command):
@@ -30,8 +32,6 @@ class BacktraceCommand(Command):
     help_string = "Unwinds the stack trace of the tracee and prints it."
 
     def invoke(self, argv0="backtrace"):
-        assert self.global_state.tracee
-
         stacktrace = self.global_state.tracee.unwind()
         for frame in stacktrace:
             symbol = "??" if not frame.symbol else frame.symbol
@@ -43,9 +43,9 @@ class DetachCommand(Command):
     help_string = "Detaches the current tracee."
 
     def invoke(self, argv0="detach"):
-        assert self.global_state.tracee
         self.global_state.tracee.detach()
-        self.global_state.tracee = None
+        self.global_state.tracee_attached = False
+
         log_info("Detached successfully!")
 
 class HelpCommand(Command):
@@ -80,7 +80,7 @@ class QuitCommand(Command):
     help_string = "Quits the debugger."
 
     def invoke(self, argv0="quit"):
-        if self.global_state.tracee:
+        if self.global_state.tracee_attached:
             self.global_state.tracee.detach()
         exit(0)
 
@@ -90,8 +90,6 @@ class RegCommand(Command):
     help_string = "Gets program registers."
 
     def invoke(self, register: str="", argv0="regs"):
-        assert self.global_state.tracee
-
         if not (registers := self.global_state.tracee.getregs()):
             raise CommandError("Could not get registers.")
 
@@ -116,8 +114,6 @@ class SetRegCommand(Command):
     help_string = "Sets program register."
 
     def invoke(self, register: str, value: int, argv0="setreg"):
-        assert self.global_state.tracee
-
         registers = self.global_state.tracee.getregs()
         if not hasattr(registers, register):
             raise CommandError(f"Unsupported Register: '{register}'")
@@ -133,7 +129,6 @@ class SingleStepCommand(Command):
     help_string = "Executes a single assembly instruction in the tracee."
 
     def invoke(self, argv0="step"):
-        assert self.global_state.tracee
         self.global_state.tracee.singlestep()
 
 commands = [AttachCommand(), BacktraceCommand(), DetachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]

@@ -9,8 +9,6 @@ class CommandProcessor:
     def __init__(self):
         self.commands: list[Command] = builtin_commands
         self.global_state = GlobalState()
-        self.global_state.tracee = None
-
         self.global_state.commands = self.commands
 
         for command in self.commands:
@@ -42,7 +40,7 @@ class CommandProcessor:
                 log_error("Command not found.")
                 continue
 
-            if command.requires_tracee and self.global_state.tracee == None:
+            if command.requires_tracee and not self.global_state.tracee_attached:
                 log_error("This command requires an active tracee.")
                 continue
 
