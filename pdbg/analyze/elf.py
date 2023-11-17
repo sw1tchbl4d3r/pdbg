@@ -15,6 +15,13 @@ class ELFSymbol:
     offset: int
     _entry: Container
 
+@dataclass
+class TextSegment:
+    text: bytearray
+    offset: int
+    size: int
+    offset_end: int
+
 class ELFAnalyzer:
     def __init__(self, filepath: Union[Path, str]):
         self.filepath = Path(filepath)
@@ -29,10 +36,7 @@ class ELFAnalyzer:
             raise AnalyzerException(f"'{self.filepath}' is not a valid ELF file.")
 
         self.symbols: dict[str, ELFSymbol] = {}
-        self.text = bytearray()
-        self.text_offset = 0
-        self.text_size = 0
-
+        self.text_segments: list[TextSegment] = []
         self.populate_data()
 
     def populate_data(self):
@@ -43,9 +47,13 @@ class ELFAnalyzer:
                 self.populate_text(section.data(), section["sh_addr"], section["sh_size"])
 
     def populate_text(self, data: bytes, offset: int, size: int):
-        self.text = bytearray(data)
-        self.text_offset = offset
-        self.text_size = size
+        # NOTE: we copy the list so we don't modify it mid-loop
+        for segment in self.text_segments[:]:
+            if segment.offset == offset:
+                self.text_segments.remove(segment)
+
+        segment = TextSegment(bytearray(data), offset, size, offset + size)
+        self.text_segments.append(segment)
 
     def populate_symbols(self, section: Union[SUNWSyminfoTableSection, SymbolTableSection]):
         for symbol in section.iter_symbols():
@@ -62,15 +70,15 @@ class ELFAnalyzer:
     # TODO: this approach is a bit naive, since a function could in theory return early,
     #       or jump into another segment where the RET would take place.
     def find_function_end(self, offset: int):
-        if offset < self.text_offset or offset >= self.text_offset + self.text_size:
-            raise AnalyzerException(f"Offset {offset} not in bounds: {self.text_offset}..{self.text_offset + self.text_size}")
+        for segment in self.text_segments:
+            if offset >= segment.offset and offset < segment.offset_end:
+                text_offset = offset - segment.offset
 
-        binary_offset = offset - self.text_offset
-
-        ctx = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-        for (address, _size, mnemonic, _op_str) in ctx.disasm_lite(self.text[binary_offset:], offset):
-            if mnemonic in ["ret", "hlt"]:
-                return address
-        return -1
+                ctx = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+                for (address, _size, mnemonic, _op_str) in ctx.disasm_lite(segment.text[text_offset:], offset):
+                    if mnemonic in ["ret", "hlt"]:
+                        return address
+                return -1
+        raise AnalyzerException(f"Offset {offset} not in any registered text segment of file '{self.filepath}'")
 
 class AnalyzerException(Exception): ...
