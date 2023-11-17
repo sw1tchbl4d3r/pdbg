@@ -1,4 +1,5 @@
 import shlex
+import readline
 
 from pdbg.commands.command import *
 from pdbg.commands.logging import log_error, log_info, PROMPT
@@ -15,13 +16,22 @@ class CommandProcessor:
         for command in self.commands:
             command.global_state = self.global_state
 
+        readline.set_auto_history(True)
+
     def register_command(self, command: Command):
         command.global_state = self.global_state
         self.commands.append(command)
 
     def start(self):
         while True:
-            cmd = shlex.split(input(PROMPT).strip(), posix=False)
+            try:
+                cmd = shlex.split(input(PROMPT).strip(), posix=False)
+            except KeyboardInterrupt:
+                print("^C")
+                continue
+            except EOFError:
+                print("quit")
+                cmd = ["quit"]
 
             if len(cmd) == 0:
                 continue
