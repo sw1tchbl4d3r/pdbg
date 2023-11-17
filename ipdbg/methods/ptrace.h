@@ -1,3 +1,5 @@
+#pragma once
+
 #include <sys/types.h>
 #include <sys/ptrace.h>
 #include <sys/user.h>
@@ -121,7 +123,7 @@ PyObject* method_read_bytes(PyObject* self, PyObject* args) {
 
     uint64_t data;
 
-    char* final = malloc(length+1);
+    char* final = (char*)malloc(length+1);
     if (!final)
         return PyErr_NoMemory();
 

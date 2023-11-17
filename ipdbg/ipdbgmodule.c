@@ -2,8 +2,8 @@
 #include <Python.h>
 
 #include "methods/globals.h"
-#include "methods/ptrace.c"
-#include "methods/util.c"
+#include "methods/ptrace.h"
+#include "methods/util.h"
 
 static PyMethodDef ModuleMethods[] = {
     { "attach",      method_attach,      METH_VARARGS, "attach to pid"                  },
