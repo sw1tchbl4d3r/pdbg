@@ -68,9 +68,9 @@ class ELFAnalyzer:
         binary_offset = offset - self.text_offset
 
         ctx = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-        for insn in ctx.disasm(self.text[binary_offset:], offset):
-            if insn.mnemonic in ["ret", "hlt"]:
-                return insn.address
+        for (address, _size, mnemonic, _op_str) in ctx.disasm_lite(self.text[binary_offset:], offset):
+            if mnemonic in ["ret", "hlt"]:
+                return address
         return -1
 
 class AnalyzerException(Exception): ...
