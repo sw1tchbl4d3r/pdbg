@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 
-from pdbg.tracee import LinuxTracee as Tracee
+from pdbg.ptrace.tracee import LinuxTracee as Tracee
 from pdbg.commands.logging import log_error
 
 class PDBGCommandError(Exception): ...

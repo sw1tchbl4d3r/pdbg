@@ -46,7 +46,7 @@ static struct PyModuleDef module_def = {
 PyMODINIT_FUNC PyInit_ipdbg(void) {
     PyObject* module = PyModule_Create(&module_def);
 
-    PyObject* datatypes_module_name = PyUnicode_FromString("pdbg.datatypes");
+    PyObject* datatypes_module_name = PyUnicode_FromString("pdbg.ptrace.datatypes");
     PyObject* datatypes_module = PyImport_Import(datatypes_module_name);
     Py_DECREF(datatypes_module_name);
 

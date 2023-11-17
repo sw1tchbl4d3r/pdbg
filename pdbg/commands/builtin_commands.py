@@ -1,5 +1,5 @@
-from pdbg.datatypes import Registers
-from pdbg.tracee import LinuxTracee as Tracee
+from pdbg.ptrace.datatypes import Registers
+from pdbg.ptrace.tracee import LinuxTracee as Tracee
 from pdbg.commands.command import Command, CommandError
 from pdbg.commands.logging import log_info
 
