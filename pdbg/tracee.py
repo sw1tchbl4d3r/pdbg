@@ -3,7 +3,7 @@ from mmap import PAGESIZE
 from enum import Enum, IntFlag, auto
 
 import ipdbg
-from pdbg.datatypes import Registers, UnwoundStackFrame
+from pdbg.datatypes import Registers
 
 class Permissions(IntFlag):
     N = 0
