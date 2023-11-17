@@ -9,6 +9,9 @@ class AttachCommand(Command):
     help_string = "Attaches to a PID and makes it this debuggers tracee."
 
     def invoke(self, pid: int, argv0="attach"):
+        if self.global_state.tracee_attached:
+            raise CommandError("Please detach from the current tracee first.")
+
         tracee = Tracee(pid)
 
         if argv0 == "attach":
