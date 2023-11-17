@@ -45,6 +45,7 @@ class DetachCommand(Command):
     def invoke(self, argv0="detach"):
         assert self.global_state.tracee
         self.global_state.tracee.detach()
+        self.global_state.tracee = None
         log_info("Detached successfully!")
 
 class HelpCommand(Command):
