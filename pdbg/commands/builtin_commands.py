@@ -26,6 +26,9 @@ class AttachCommand(Command):
 
         log_info("Attached successfully!")
 
+        self.global_state.invoke_callbacks("on_attach")
+        self.global_state.invoke_callbacks("on_step")
+
 class BacktraceCommand(Command):
     names = ["backtrace", "bt"]
     requires_tracee = True
@@ -130,5 +133,7 @@ class SingleStepCommand(Command):
 
     def invoke(self, argv0="step"):
         self.global_state.tracee.singlestep()
+
+        self.global_state.invoke_callbacks("on_step")
 
 commands = [AttachCommand(), BacktraceCommand(), DetachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import Any, Callable
 
 from pdbg.ptrace.tracee import LinuxTracee as Tracee
 from pdbg.commands.logging import log_error
@@ -46,11 +47,23 @@ class GlobalState:
     tracee: Tracee
     tracee_attached = False
 
+    _callbacks: dict[str, list[Callable[[GlobalState], None]]] = {}
+
     def get_command(self, name: str):
         for command in self.commands:
             if name in command.names and command.init_success:
                 return command
         return None
+
+    def add_callback(self, identifier: str, callback: Callable[[GlobalState], Any]):
+        callbacks_for_identifier = self._callbacks.get(identifier, [])
+        callbacks_for_identifier.append(callback)
+        self._callbacks[identifier] = callbacks_for_identifier
+
+    def invoke_callbacks(self, identifier: str):
+        callbacks_for_identifier = self._callbacks.get(identifier, [])
+        for callback in callbacks_for_identifier:
+            callback(self)
 
 class Command:
     names: list[str] = []
