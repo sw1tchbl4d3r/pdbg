@@ -29,14 +29,14 @@ long int3(void) {
     long val;
 
     asm volatile(
-        "mov rax, 1337;"
+        "movq $1337, %%rax;"
         "int3;"
-        "mov %0, rax;"
+        "movq %%rax, %0;"
         : "=r"(val)
         :
-        : "rax"
+        : "%rax"
     );
-    
+
     return val;
 }
 
@@ -81,7 +81,6 @@ int dbg_test(void) {
     printf("%s\n", P);
     return 0;
 }
-
 
 int main(void) {
     return dbg_test();
