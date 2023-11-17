@@ -7,7 +7,7 @@
 #include <Python.h>
 #include <libunwind-ptrace.h>
 
-#include "methods/globals.h"
+#include "globals.h"
 
 #define ENUMERATE_REGISTERS(O)           \
     O(r15); O(r14); O(r13); O(r12);      \
