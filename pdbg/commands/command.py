@@ -5,6 +5,7 @@ from typing import Any, Callable
 
 from pdbg.ptrace.tracee import LinuxTracee as Tracee
 from pdbg.commands.logging import log_error
+from pdbg.analyze.elf import ELFAnalyzer
 
 class PDBGCommandError(Exception): ...
 
@@ -41,11 +42,11 @@ def remove_quotes(given: str):
 
 class GlobalState:
     storage: dict = {}
-
     commands: list[Command] = []
 
     tracee: Tracee
     tracee_attached = False
+    analyzers: dict[str, ELFAnalyzer] = {}
 
     _callbacks: dict[str, list[Callable[[GlobalState], None]]] = {}
 

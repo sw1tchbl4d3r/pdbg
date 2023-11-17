@@ -24,7 +24,7 @@ class MemoryMapping:
         self.end = end
         self.size = end - start
         self.perms = perms
-        self.identifier = identifier
+        self.identifier = identifier.strip()
 
     @classmethod
     def from_line(cls, line: str):

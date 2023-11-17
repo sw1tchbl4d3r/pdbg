@@ -38,10 +38,26 @@ class BacktraceCommand(Command):
     help_string = "Unwinds the stack trace of the tracee and prints it."
 
     def invoke(self, argv0="backtrace"):
+        mmaps = self.global_state.tracee.get_mmapings()
         stacktrace = self.global_state.tracee.unwind()
         for frame in stacktrace:
+            offset = frame.offset
             symbol = "??" if not frame.symbol else frame.symbol
-            print(f"{hex(frame.rip)}: {symbol}+{hex(frame.offset)}")
+
+            if mmaps:
+                mmap = self.global_state.tracee.get_map_containing(frame.rip, mmaps)
+                if mmap:
+                    analyzer = self.global_state.analyzers.get(mmap.identifier, None)
+                    if analyzer:
+                        frame_offset_to_base = frame.rip  - analyzer.base_address
+                        symbol_fn_offset_to_base = frame_offset_to_base - frame.offset
+                        symbol_fn_end_offset = analyzer.find_function_end(symbol_fn_offset_to_base)
+
+                        if symbol_fn_end_offset < frame_offset_to_base:
+                            symbol = "??"
+                            offset = 0
+
+            print(f"{hex(frame.rip)}: {symbol}+{hex(offset)}")
 
 class DetachCommand(Command):
     names = ["detach"]
