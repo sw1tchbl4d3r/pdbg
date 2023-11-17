@@ -6,7 +6,7 @@ WIP process debugger for linux, written in Python and C.
 ```sh
 $ pip install -r requirements.txt
 $ make
-$ python3 main.py
+$ ./main.py
 dbg> help
 ```
 
