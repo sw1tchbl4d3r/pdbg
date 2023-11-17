@@ -12,6 +12,7 @@ class Colors:
     LRED      = "\033[91m"
     LGREEN    = "\033[92m"
     LBLUE     = "\033[94m"
+    CLEAR     = "\033[H\033[2J"
 
 PROMPT = f"{Colors.GREEN}{Colors.BOLD}dbg>{Colors.RESET} "
 

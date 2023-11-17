@@ -1,7 +1,7 @@
 from pdbg.ptrace.datatypes import Registers
 from pdbg.ptrace.tracee import LinuxTracee as Tracee
 from pdbg.commands.command import Command, CommandError
-from pdbg.commands.logging import log_info
+from pdbg.commands.logging import Colors, log_info
 
 class AttachCommand(Command):
     names = ["attach", "seize"]
@@ -62,6 +62,14 @@ class BacktraceCommand(Command):
                             offset = 0
 
             print(f"{hex(frame.rip)}: {symbol}+{hex(offset)}")
+
+class ClearCommand(Command):
+    names = ["clear", "cls"]
+    requires_tracee = False
+    help_string = "Clears the screen."
+
+    def invoke(self, argv0="clear"):
+        print(Colors.CLEAR)
 
 class DetachCommand(Command):
     names = ["detach"]
@@ -159,4 +167,4 @@ class SingleStepCommand(Command):
 
         self.global_state.invoke_callbacks("on_step")
 
-commands = [AttachCommand(), BacktraceCommand(), DetachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]
+commands = [AttachCommand(), ClearCommand(), BacktraceCommand(), DetachCommand(), HelpCommand(), PrintCommand(), QuitCommand(), RegCommand(), SetRegCommand(), SingleStepCommand()]
